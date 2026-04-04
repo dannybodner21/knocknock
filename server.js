@@ -36,7 +36,7 @@ app.post('/handle-input', (req, res) => {
 
     // send SMS
     client.messages.create({
-        body: 'Request access here: https://your-app-link.com/request',
+        body: 'Request access here: https://knockknock-server.onrender.com/request',
         from: TWILIO_NUMBER,
         to: callerNumber
     }).then(() => {
@@ -72,6 +72,36 @@ app.post('/recording-complete', (req, res) => {
   <Say voice="alice">Thank you. Goodbye.</Say>
   <Hangup/>
 </Response>`);
+});
+
+app.get('/request', (req, res) => {
+    res.send(`
+      <html>
+        <body style="background:black;color:lime;font-family:monospace;">
+          <h2>KnockKnock Request</h2>
+          <form method="POST" action="/submit-request">
+            <input name="name" placeholder="Your name" /><br/><br/>
+            <input name="message" placeholder="Reason for calling" /><br/><br/>
+            <button type="submit">Submit</button>
+          </form>
+        </body>
+      </html>
+    `);
+});
+
+app.post('/submit-request', (req, res) => {
+    const name = req.body.name;
+    const message = req.body.message;
+  
+    console.log("Request:", name, message);
+  
+    res.send(`
+      <html>
+        <body style="background:black;color:lime;font-family:monospace;">
+          <h2>Request sent ✅</h2>
+        </body>
+      </html>
+    `);
 });
 
 const PORT = process.env.PORT || 3000;
