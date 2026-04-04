@@ -4,39 +4,48 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Twilio will POST here after user presses a button
 app.post('/handle-input', (req, res) => {
-    const digit = req.body.Digits;
+  console.log('BODY:', req.body);
 
-    console.log("Pressed:", digit);
+  const digit = req.body.Digits;
+  let response = '';
 
-    let response = '';
-
-    if (digit === '1') {
-        response = `
+  if (digit === '1') {
+    response = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say>Leave a message after the beep.</Say>
-    <Record maxLength="30" />
-</Response>
-`;
-    } else if (digit === '2') {
-        response = `
+  <Say voice="alice">Leave a message after the beep. Press pound when you are done.</Say>
+  <Record maxLength="30" finishOnKey="#" action="https://knockknock-server.onrender.com/recording-complete" method="POST" />
+</Response>`;
+  } else if (digit === '2') {
+    response = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say>A request link has been sent. Goodbye.</Say>
-</Response>
-`;
-    } else {
-        response = `
+  <Say voice="alice">A request link has been sent. Goodbye.</Say>
+  <Hangup/>
+</Response>`;
+  } else {
+    response = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say>Invalid input. Goodbye.</Say>
-</Response>
-`;
-    }
+  <Say voice="alice">Invalid input. Goodbye.</Say>
+  <Hangup/>
+</Response>`;
+  }
 
-    res.type('text/xml');
-    res.send(response);
+  res.set('Content-Type', 'text/xml');
+  res.send(response);
 });
 
-app.listen(3000, () => {
-    console.log('Server running on http://localhost:3000');
+app.post('/recording-complete', (req, res) => {
+  console.log('RECORDING:', req.body);
+
+  res.set('Content-Type', 'text/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">Thank you. Goodbye.</Say>
+  <Hangup/>
+</Response>`);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
