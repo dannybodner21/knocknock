@@ -12,6 +12,16 @@ const client = twilio(
   
 const TWILIO_NUMBER = process.env.TWILIO_NUMBER;
 
+const admin = require('firebase-admin');
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const db = admin.firestore();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 
@@ -32,24 +42,37 @@ app.post('/handle-input', (req, res) => {
     </Response>`;
 
   } else if (digit === '2') {
-    const callerNumber = req.body.From;
-
-    // send SMS
-    client.messages.create({
-        body: 'Request access here: https://knockknock-server.onrender.com/request',
-        from: TWILIO_NUMBER,
-        to: callerNumber
-    }).then(() => {
-        console.log('SMS sent to', callerNumber);
-    }).catch(err => {
-        console.error('SMS error:', err);
-    });
 
     response = `<?xml version="1.0" encoding="UTF-8"?>
     <Response>
-    <Say voice="alice">A request link has been sent to your phone. Goodbye.</Say>
+    <Say voice="alice">
+        To request access, please visit leave me alone dot I O.
+    </Say>
+    <Pause length="1"/>
+    <Say>
+        That is leave me alone dot I O.
+    </Say>
     <Hangup/>
     </Response>`;
+
+    // const callerNumber = req.body.From;
+
+    // send SMS
+    // client.messages.create({
+    //     body: 'Request access here: https://knockknock-server.onrender.com/request',
+    //     from: TWILIO_NUMBER,
+    //     to: callerNumber
+    // }).then(() => {
+    //     console.log('SMS sent to', callerNumber);
+    // }).catch(err => {
+    //     console.error('SMS error:', err);
+    // });
+
+    // response = `<?xml version="1.0" encoding="UTF-8"?>
+    // <Response>
+    // <Say voice="alice">A request link has been sent to your phone. Goodbye.</Say>
+    // <Hangup/>
+    // </Response>`;
 
   } else {
     response = `<?xml version="1.0" encoding="UTF-8"?>
@@ -89,19 +112,31 @@ app.get('/request', (req, res) => {
     `);
 });
 
-app.post('/submit-request', (req, res) => {
-    const name = req.body.name;
-    const message = req.body.message;
+app.post('/submit-request', async (req, res) => {
+    try {
+      const name = req.body.name;
+      const message = req.body.message;
   
-    console.log("Request:", name, message);
+      await db.collection('requests').add({
+        toUserId: 'REPLACE_WITH_YOUR_USER_ID',
+        fromNumber: 'unknown',
+        name,
+        message,
+        status: 'pending',
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
   
-    res.send(`
-      <html>
-        <body style="background:black;color:lime;font-family:monospace;">
-          <h2>Request sent ✅</h2>
-        </body>
-      </html>
-    `);
+      res.send(`
+        <html>
+          <body style="background:black;color:lime;font-family:monospace;">
+            <h2>Request sent ✅</h2>
+          </body>
+        </html>
+      `);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('error');
+    }
 });
 
 const PORT = process.env.PORT || 3000;
