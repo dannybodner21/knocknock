@@ -153,7 +153,29 @@ app.post('/submit-request', async (req, res) => {
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      const fcmToken = process.env.FCM_TEST_TOKEN;
+      const userId = 'danny'; // temporary until you map from toNumber
+
+        const userDoc = await db.collection('users').doc(userId).get();
+
+        if (!userDoc.exists) {
+        console.log('User not found');
+        return res.sendStatus(200); // don’t break UX
+        }
+
+        const fcmToken = userDoc.data().fcmToken;
+
+        if (!fcmToken) {
+        console.log('No FCM token for user');
+        return res.sendStatus(200);
+        }
+
+        await admin.messaging().send({
+        token: fcmToken,
+        notification: {
+            title: "KnockKnock",
+            body: `${name} requested access`
+        }
+        });
 
       await admin.messaging().send({
         token: fcmToken,
