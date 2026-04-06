@@ -30,6 +30,28 @@ const app = express();
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+
+app.post('/register-device', async (req, res) => {
+    try {
+      const { userId, fcmToken } = req.body;
+  
+      if (!userId || !fcmToken) {
+        return res.status(400).send('Missing fields');
+      }
+  
+      await db.collection('users').doc(userId).set({
+        fcmToken
+      }, { merge: true });
+  
+      console.log('Saved FCM token for', userId);
+  
+      res.sendStatus(200);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('error');
+    }
+  });
 
 app.post('/handle-input', (req, res) => {
   console.log('BODY:', req.body);
