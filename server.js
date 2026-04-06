@@ -46,11 +46,11 @@ app.post('/handle-input', (req, res) => {
     response = `<?xml version="1.0" encoding="UTF-8"?>
     <Response>
     <Say voice="alice">
-        To request access, please visit leave me alone dot I O.
+        To request access, please visit knock knock go away dot web flow dot I O forward slash request.
     </Say>
     <Pause length="1"/>
     <Say>
-        That is leave me alone dot I O.
+        That is knock knock go away dot web flow dot I O forward slash request.
     </Say>
     <Hangup/>
     </Response>`;
