@@ -1,4 +1,5 @@
 
+const cors = require('cors');
 const twilio = require('twilio');
 
 if (!process.env.TWILIO_ACCOUNT_SID) {
@@ -26,6 +27,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const app = express();
+
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.post('/handle-input', (req, res) => {
