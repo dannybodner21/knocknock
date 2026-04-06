@@ -116,10 +116,12 @@ app.post('/submit-request', async (req, res) => {
     try {
       const name = req.body.name;
       const message = req.body.message;
+      const fromNumber = req.body.fromNumber;
+      const toNumber = req.body.toNumber;
   
       await db.collection('requests').add({
-        toUserId: 'REPLACE_WITH_YOUR_USER_ID',
-        fromNumber: 'unknown',
+        toUserId: toNumber, // or map later
+        fromNumber,
         name,
         message,
         status: 'pending',
