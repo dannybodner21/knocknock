@@ -144,59 +144,68 @@ app.post('/submit-request', async (req, res) => {
       const fromNumber = req.body.fromNumber;
       const toNumber = req.body.toNumber;
   
+      const snapshot = await db.collection('users')
+        .where('phoneNumber', '==', toNumber)
+        .limit(1)
+        .get();
+  
+      if (snapshot.empty) {
+        console.log('No user found for number:', toNumber);
+  
+        return res.status(200).send(`
+          <html>
+            <body style="background:black;color:lime;font-family:monospace;">
+              <h2>Request sent</h2>
+            </body>
+          </html>
+        `);
+      }
+  
+      const userDoc = snapshot.docs[0];
+      const userData = userDoc.data();
+      const userId = userDoc.id;
+      const fcmToken = userData.fcmToken;
+  
       await db.collection('requests').add({
-        toUserId: toNumber, // or map later
+        toUserId: userId,
+        toNumber,
         fromNumber,
         name,
         message,
         status: 'pending',
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
-
-      const userId = 'danny'; // temporary until you map from toNumber
-
-        const userDoc = await db.collection('users').doc(userId).get();
-
-        if (!userDoc.exists) {
-        console.log('User not found');
-        return res.sendStatus(200); // don’t break UX
-        }
-
-        const fcmToken = userDoc.data().fcmToken;
-
-        if (!fcmToken) {
-        console.log('No FCM token for user');
-        return res.sendStatus(200);
-        }
-
-        await admin.messaging().send({
-        token: fcmToken,
-        notification: {
-            title: "KnockKnock",
-            body: `${name} requested access`
-        }
-        });
-
-      await admin.messaging().send({
-        token: fcmToken,
-        notification: {
-            title: "KnockKnock",
-            body: `${name} requested access`
-        }
-      });
   
-      res.send(`
+      if (fcmToken) {
+        await admin.messaging().send({
+          token: fcmToken,
+          notification: {
+            title: 'KnockKnock',
+            body: `${name} requested access`
+          },
+          data: {
+            type: 'access_request',
+            fromNumber: fromNumber || '',
+            name: name || '',
+            message: message || ''
+          }
+        });
+      } else {
+        console.log('No FCM token for user:', userId);
+      }
+  
+      res.status(200).send(`
         <html>
           <body style="background:black;color:lime;font-family:monospace;">
-            <h2>Request sent ✅</h2>
+            <h2>Request sent</h2>
           </body>
         </html>
       `);
     } catch (err) {
-      console.error(err);
+      console.error('submit-request error:', err);
       res.status(500).send('error');
     }
-});
+  });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
