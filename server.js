@@ -125,6 +125,16 @@ app.post('/submit-request', async (req, res) => {
         status: 'pending',
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
+
+      const fcmToken = process.env.FCM_TEST_TOKEN;
+
+      await admin.messaging().send({
+        token: fcmToken,
+        notification: {
+            title: "KnockKnock",
+            body: `${name} requested access`
+        }
+      });
   
       res.send(`
         <html>
