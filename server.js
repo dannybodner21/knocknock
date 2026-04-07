@@ -212,6 +212,8 @@ app.post('/voice', async (req, res) => {
     const toNumber = req.body.To;
   
     console.log("Incoming call from:", fromNumber, "to:", toNumber);
+
+    console.log("VOICE DEBUG → From:", req.body.From, "To:", req.body.To);
   
     const allowed = await isNumberAllowed(toNumber, fromNumber);
   
@@ -277,17 +279,26 @@ app.post('/voice', async (req, res) => {
 });
 
 async function isNumberAllowed(toNumber, fromNumber) {
+    console.log("CHECK → toNumber:", toNumber, "fromNumber:", fromNumber);
+  
     const snapshot = await db.collection('users')
       .where('phoneNumber', '==', toNumber)
       .limit(1)
       .get();
   
-    if (snapshot.empty) return false;
+    console.log("SNAPSHOT SIZE:", snapshot.size);
   
-    const user = snapshot.docs[0].data();
-    const whitelist = user.whitelist || [];
+    if (!snapshot.empty) {
+      const user = snapshot.docs[0].data();
+      console.log("USER DATA:", user);
   
-    return whitelist.includes(fromNumber);
+      const whitelist = user.whitelist || [];
+      console.log("WHITELIST:", whitelist);
+  
+      return whitelist.includes(fromNumber);
+    }
+  
+    return false;
 }
 
 const PORT = process.env.PORT || 3000;
