@@ -205,7 +205,90 @@ app.post('/submit-request', async (req, res) => {
       console.error('submit-request error:', err);
       res.status(500).send('error');
     }
-  });
+});
+
+app.post('/voice', async (req, res) => {
+    const fromNumber = req.body.From;
+    const toNumber = req.body.To;
+  
+    console.log("Incoming call from:", fromNumber, "to:", toNumber);
+  
+    const allowed = await isNumberAllowed(toNumber, fromNumber);
+  
+    let response;
+  
+    if (allowed) {
+      console.log("ALLOWING CALL → sending push");
+  
+      const snapshot = await db.collection('users')
+        .where('phoneNumber', '==', toNumber)
+        .limit(1)
+        .get();
+  
+      if (!snapshot.empty) {
+        const user = snapshot.docs[0].data();
+        const fcmToken = user.fcmToken;
+  
+        if (fcmToken) {
+          await admin.messaging().send({
+            token: fcmToken,
+            notification: {
+              title: "Incoming Call",
+              body: `${fromNumber} is calling`
+            },
+            data: {
+              type: "incoming_call",
+              fromNumber: fromNumber || ""
+            }
+          });
+        } else {
+          console.log("No FCM token for user");
+        }
+      } else {
+        console.log("No user found for number:", toNumber);
+      }
+  
+      // keep call alive briefly
+      response = `<?xml version="1.0" encoding="UTF-8"?>
+        <Response>
+            <Pause length="10"/>
+        </Response>`;
+  
+    } else {
+      console.log("BLOCKING → show menu");
+  
+      response = `<?xml version="1.0" encoding="UTF-8"?>
+        <Response>
+            <Gather numDigits="1" action="https://knockknock-server.onrender.com/handle-input" method="POST">
+            <Say voice="alice">
+                This number does not accept calls from unknown callers.
+            </Say>
+            <Pause length="1"/>
+            <Say>
+                Press 1 to leave a voicemail.
+                Press 2 to request permission to call.
+            </Say>
+            </Gather>
+        </Response>`;
+    }
+  
+    res.set('Content-Type', 'text/xml');
+    res.send(response);
+});
+
+async function isNumberAllowed(toNumber, fromNumber) {
+    const snapshot = await db.collection('users')
+      .where('phoneNumber', '==', toNumber)
+      .limit(1)
+      .get();
+  
+    if (snapshot.empty) return false;
+  
+    const user = snapshot.docs[0].data();
+    const whitelist = user.whitelist || [];
+  
+    return whitelist.includes(fromNumber);
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
