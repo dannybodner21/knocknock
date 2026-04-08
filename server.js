@@ -339,30 +339,39 @@ app.post('/answer-call', async (req, res) => {
     }
 });
 
-const AccessToken = twilio.jwt.AccessToken;
-const VoiceGrant = AccessToken.VoiceGrant;
-
 app.get('/token', (req, res) => {
-  const identity = 'danny'; // keep simple for now
-
-  const accessToken = new AccessToken(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_API_SID,     // use your name
-    process.env.TWILIO_API_SECRET
-  );
-
-  accessToken.identity = identity;
-
-  const voiceGrant = new VoiceGrant({
-    outgoingApplicationSid: process.env.TWIML_APP_SID,
-    incomingAllow: true
-  });
-
-  accessToken.addGrant(voiceGrant);
-
-  res.send({
-    token: accessToken.toJwt()
-  });
+    try {
+      console.log("ACCOUNT SID:", process.env.TWILIO_ACCOUNT_SID);
+      console.log("API SID:", process.env.TWILIO_API_SID);
+      console.log("API SECRET:", process.env.TWILIO_API_SECRET ? "exists" : "missing");
+      console.log("TWIML APP SID:", process.env.TWIML_APP_SID);
+  
+      const AccessToken = twilio.jwt.AccessToken;
+      const VoiceGrant = AccessToken.VoiceGrant;
+  
+      const identity = 'danny';
+  
+      const accessToken = new AccessToken(
+        process.env.TWILIO_ACCOUNT_SID,
+        process.env.TWILIO_API_SID,
+        process.env.TWILIO_API_SECRET
+      );
+  
+      accessToken.identity = identity;
+  
+      const voiceGrant = new VoiceGrant({
+        outgoingApplicationSid: process.env.TWIML_APP_SID,
+        incomingAllow: true
+      });
+  
+      accessToken.addGrant(voiceGrant);
+  
+      res.send({ token: accessToken.toJwt() });
+  
+    } catch (err) {
+      console.error("TOKEN ERROR:", err);
+      res.status(500).send("error");
+    }
 });
 
 const PORT = process.env.PORT || 3000;
