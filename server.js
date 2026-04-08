@@ -341,23 +341,16 @@ app.post('/answer-call', async (req, res) => {
 
 app.get('/token', (req, res) => {
     try {
-      console.log("ACCOUNT SID:", process.env.TWILIO_ACCOUNT_SID);
-      console.log("API SID:", process.env.TWILIO_API_SID);
-      console.log("API SECRET:", process.env.TWILIO_API_SECRET ? "exists" : "missing");
-      console.log("TWIML APP SID:", process.env.TWIML_APP_SID);
   
       const AccessToken = twilio.jwt.AccessToken;
       const VoiceGrant = AccessToken.VoiceGrant;
-  
-      const identity = 'danny';
-  
+    
       const accessToken = new AccessToken(
         process.env.TWILIO_ACCOUNT_SID,
         process.env.TWILIO_API_SID,
-        process.env.TWILIO_API_SECRET
+        process.env.TWILIO_API_SECRET,
+        { identity: 'danny' }
       );
-  
-      accessToken.identity = identity;
   
       const voiceGrant = new VoiceGrant({
         outgoingApplicationSid: process.env.TWIML_APP_SID,
