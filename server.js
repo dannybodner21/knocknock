@@ -249,7 +249,8 @@ app.post('/voice', async (req, res) => {
             },
             data: {
               type: "incoming_call",
-              fromNumber: fromNumber || ""
+              fromNumber: fromNumber || "",
+              callSid: callSid || ""
             }
           });
         } else {
@@ -309,6 +310,31 @@ async function isNumberAllowed(toNumber, fromNumber) {
   
     return false;
 }
+
+app.post('/answer-call', async (req, res) => {
+    try {
+      const { callSid } = req.body;
+  
+      if (!callSid) {
+        return res.status(400).send('Missing callSid');
+      }
+  
+      console.log("ANSWERING CALL:", callSid);
+  
+      // tell Twilio to connect the call
+      await client.calls(callSid).update({
+        twiml: `<Response>
+                  <Say>Connecting</Say>
+                  <Dial>${process.env.TWILIO_NUMBER}</Dial>
+                </Response>`
+      });
+  
+      res.sendStatus(200);
+    } catch (err) {
+      console.error("answer-call error:", err);
+      res.status(500).send('error');
+    }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
