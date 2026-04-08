@@ -321,12 +321,15 @@ app.post('/answer-call', async (req, res) => {
   
       console.log("ANSWERING CALL:", callSid);
   
-      // tell Twilio to connect the call
       await client.calls(callSid).update({
-        twiml: `<Response>
-                  <Say>Connecting</Say>
-                  <Dial>${process.env.TWILIO_NUMBER}</Dial>
-                </Response>`
+        twiml: `
+          <Response>
+            <Say>Connecting call</Say>
+            <Dial>
+              <Number>${process.env.YOUR_REAL_PHONE_NUMBER}</Number>
+            </Dial>
+          </Response>
+        `
       });
   
       res.sendStatus(200);
@@ -334,6 +337,32 @@ app.post('/answer-call', async (req, res) => {
       console.error("answer-call error:", err);
       res.status(500).send('error');
     }
+});
+
+const AccessToken = twilio.jwt.AccessToken;
+const VoiceGrant = AccessToken.VoiceGrant;
+
+app.get('/token', (req, res) => {
+  const identity = 'danny'; // keep simple for now
+
+  const accessToken = new AccessToken(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_API_SID,     // use your name
+    process.env.TWILIO_API_SECRET
+  );
+
+  accessToken.identity = identity;
+
+  const voiceGrant = new VoiceGrant({
+    outgoingApplicationSid: process.env.TWIML_APP_SID,
+    incomingAllow: true
+  });
+
+  accessToken.addGrant(voiceGrant);
+
+  res.send({
+    token: accessToken.toJwt()
+  });
 });
 
 const PORT = process.env.PORT || 3000;
