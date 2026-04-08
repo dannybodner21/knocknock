@@ -213,6 +213,12 @@ app.post('/voice', async (req, res) => {
 
     const callSid = req.body.CallSid;
     console.log("CALL SID:", callSid);
+
+    await db.collection('activeCalls').doc(callSid).set({
+        toNumber,
+        fromNumber,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
   
     console.log("Incoming call from:", fromNumber, "to:", toNumber);
 
