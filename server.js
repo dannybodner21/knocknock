@@ -210,6 +210,9 @@ app.post('/submit-request', async (req, res) => {
 app.post('/voice', async (req, res) => {
     const fromNumber = req.body.From;
     const toNumber = req.body.To;
+
+    const callSid = req.body.CallSid;
+    console.log("CALL SID:", callSid);
   
     console.log("Incoming call from:", fromNumber, "to:", toNumber);
 
